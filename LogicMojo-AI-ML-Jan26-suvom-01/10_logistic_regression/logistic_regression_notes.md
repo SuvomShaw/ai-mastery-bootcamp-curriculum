@@ -2,9 +2,6 @@
 
 **AI & ML Bootcamp | Module: Classification**
 
-- **Instructor**: Suvom Shaw
-- **Goal**: Find an optimal linear hyperplane to cleanly separate binary classes.
-
 ---
 
 ## Contents (Quick)
