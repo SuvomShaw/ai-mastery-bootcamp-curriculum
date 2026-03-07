@@ -96,7 +96,7 @@ $$ y \in \{-1, +1\} $$
 Since $y$ dictates the "true" side of the plane, and $z$ ($\theta^T x$) dictates the "predicted" side of the plane, we can multiply them to create incredibly useful geometry called the **Functional Margin ($m$)**:
 $$ m = y (\theta^T x) $$
 
-![Deriving the Geometric Boundary: Hyperplane and Margins](./images/hyperplane_margin.png)
+![Deriving the Geometric Boundary: Hyperplane and Margins](https://upload.wikimedia.org/wikipedia/commons/b/b5/Svm_separating_hyperplanes_%28SVG%29.svg)
 
 What does this single multiplication accomplish algebraically?
 1.  **Correct & Far (Good)**: True $y=1$, Predicted $z=5 \implies m = +5$ (Large Positive)
@@ -118,7 +118,7 @@ Since we cannot use the stiff staircase function, we need to invent a smooth, co
 The smoothest algebraic function that perfectly satisfies this behavior is the **Logistic Loss Curve**:
 $$ \text{Loss}(m) = \log(1 + e^{-m}) $$
 
-![Approximating Step Loss with Logistic Loss](./images/log_loss_curve.png)
+![Approximating Step Loss with Logistic Loss](https://scikit-learn.org/stable/_images/sphx_glr_plot_sgd_loss_functions_001.png)
 
 Let's plug our margin back in!
 $$ \text{Cost for one point} = \log(1 + e^{-y (\theta^T x)}) $$
@@ -268,7 +268,7 @@ Imagine we don't know what probability threshold to use (0.3? 0.5? 0.8?) to clas
 
 As we lower the threshold to catch more true targets, we *will* mathematically get more false alarms. The ROC curve just graphs this inescapable trade-off. 
 
-![Receiver Operating Characteristic (ROC) Curve](./images/roc_curve.png)
+![Receiver Operating Characteristic (ROC) Curve](https://upload.wikimedia.org/wikipedia/commons/1/13/Roc_curve.svg)
 
 #### Definition Summary
 *   **Explanation**: Plots the True Positive Rate vs False Positive Rate across all possible probability thresholds.
