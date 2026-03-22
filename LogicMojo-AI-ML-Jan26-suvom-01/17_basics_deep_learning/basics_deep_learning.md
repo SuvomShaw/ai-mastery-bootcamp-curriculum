@@ -254,17 +254,9 @@ $$
 \frac{d}{dz}\sigma(z) = \sigma(z)(1-\sigma(z)) \approx 0 \text{ when } |z| \text{ is large}
 $$
 
-### 🖥️ Mini-lab — Compare activations yourself
-### ✅ Quick check
 
-For each activation (sigmoid, tanh, ReLU), answer:
-
-1. What output range does it produce?
-2. Does it saturate (have very small gradients) for large $|z|$?
-3. Is it typically used in **hidden layers** or mainly as an **output layer**?
-
-### ⚠️ Vanishing Gradient Illustration
-![Vanishing Gradient](https://miro.medium.com/v2/resize:fit:1400/1*8hU6K9x3n6G6QX6zJ5vGxQ.png)
+<!-- ### ⚠️ Vanishing Gradient Illustration -->
+<!-- ![Vanishing Gradient](https://miro.medium.com/v2/resize:fit:1400/1*8hU6K9x3n6G6QX6zJ5vGxQ.png) -->
 
 ### ✅ The most important pairing table (memorize this)
 | Task | Output layer activation | Recommended loss |
@@ -291,7 +283,7 @@ It repeats this loop many times:
 4. **Update** (optimizer changes parameters)
 
 ### 🔄 Training Loop Diagram
-![Training Loop](https://miro.medium.com/v2/resize:fit:1400/1*Q6s6ZQv1t7V0kGEXLMaLLA.png)
+![Training Loop](https://miro.medium.com/1*HAkdStoHhn08TP6KCqWbjg.png)
 
 Training loop in words:
 
