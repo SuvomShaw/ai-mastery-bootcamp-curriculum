@@ -3,17 +3,6 @@
 
 ---
 
-## What You Will Know After This
-
-By the end of this topic you should be able to answer:
-
-- Why do we almost never train a vision model from scratch in practice?
-- What is the difference between feature extraction and fine-tuning?
-- How does VGG work, and why is it useful for learning?
-- What problem does ResNet solve, and why does it matter?
-- What is the step-by-step workflow for a real transfer learning project?
-- What mistakes should you avoid, and how do you evaluate properly?
-
 ---
 
 ## Table of Contents
@@ -29,10 +18,6 @@ By the end of this topic you should be able to answer:
 9. [Domain Gap and Catastrophic Forgetting](#9-domain-gap-and-catastrophic-forgetting)
 10. [Mistakes to Avoid](#10-mistakes-to-avoid)
 11. [Evaluation — Beyond Accuracy](#11-evaluation--beyond-accuracy)
-12. [Real-World Applications](#12-real-world-applications)
-13. [Exam and Interview Questions](#13-exam-and-interview-questions)
-14. [5-Minute Revision Sheet](#14-5-minute-revision-sheet)
-15. [Homework](#15-homework)
 
 ---
 
@@ -685,42 +670,5 @@ Use F1 as your primary metric when classes are imbalanced. It balances both fail
 | From scratch | Very large — hundreds of thousands | Slow | High — likely to overfit on small data | Only when ImageNet features genuinely don't transfer |
 | Feature extraction | Low to medium — even a few thousand works | Fast | Low — backbone is frozen | Your first step. Always. |
 | Fine-tuning | Medium to large — more data justifies more unfreezing | Medium | Medium — needs small LR and careful validation | After your baseline plateaus and you have enough data |
-
----
-
-## 12. Real-World Applications
-
-Transfer learning is the standard approach in industry because labeled data is almost always scarce. Here is where it shows up:
-
-| Domain | Typical Task | Why It Fits |
-|---|---|---|
-| Medical Imaging | Pneumonia from X-ray, diabetic retinopathy grading | Medical labels are expensive and slow to collect — you rarely have enough to train from scratch |
-| Manufacturing | Defect classification, scratch detection, missing parts | Building a large defect dataset requires months of production line data |
-| Agriculture | Plant disease, crop health classification | Texture and colour patterns transfer reasonably well from ImageNet |
-| Retail | Product classification, catalogue categorization | Many categories, few images per category — exactly the scenario transfer learning is designed for |
-| Security | PPE compliance, anomaly detection in video frames | Camera conditions vary, labels are scarce, deployment speed matters |
-
----
-
-## 13. 5-Minute Revision Sheet
-
-Read through these before a test or viva:
-
-- Transfer learning means reusing a model's visual knowledge — you do not start from random weights
-- Early layers learn general features like edges and textures; later layers learn task-specific patterns
-- VGG is the clearest architecture for understanding how deep CNNs are structured
-- ResNet adds a skip connection so each block learns `Output = F(x) + x`, not the full mapping
-- Skip connections let gradients flow directly backward — this is why very deep networks became trainable
-- Feature extraction: freeze the entire backbone, train only the new head
-- Fine-tuning: after getting a baseline, selectively unfreeze later layers and adapt them slowly
-- Always use discriminative learning rates — smaller for pretrained layers, larger for the new head
-- Train the head first and get a baseline before unfreezing anything
-- Validation transforms must be deterministic — random augmentation makes metrics unreliable
-- Accuracy alone is not enough — always check F1, per-class recall, and the confusion matrix
-- ImageNet normalization: `mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`
-- Domain gap = the visual distance between your source training data and your target task
-- Catastrophic forgetting = a high learning rate overwrites pretrained features with noise
-- For demos: ResNet-18. For real projects: ResNet-50
-- Fine-tuning is correction on top of a good starting point — not retraining from zero
 
 ---
