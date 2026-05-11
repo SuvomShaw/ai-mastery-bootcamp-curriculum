@@ -1,0 +1,17 @@
+customer_id,product_id,event_type,price,quantity,is_returned
+C001,P101,view,1200.0,1,False
+C001,P101,cart,1200.0,1,False
+C001,P101,purchase,1200.0,1,False
+C001,P102,view,500.0,1,False
+C001,P102,purchase,500.0,2,True
+C002,P101,view,1200.0,1,False
+C002,P103,view,800.0,1,False
+C002,P103,cart,800.0,1,False
+C002,P103,purchase,800.0,1,False
+C003,P104,view,1500.0,1,False
+C003,P104,cart,1500.0,1,False
+C003,P104,cart,1500.0,1,False
+C004,P105,purchase,300.0,3,False
+C004,P105,purchase,300.0,1,True
+C005,P106,view,200.0,1,False
+
