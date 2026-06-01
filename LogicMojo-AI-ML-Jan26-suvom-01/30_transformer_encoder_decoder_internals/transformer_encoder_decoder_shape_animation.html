@@ -1,0 +1,2057 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transformer Encoder-Decoder Shape Flow Animation</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --panel-2: #eef4f8;
+      --ink: #17202a;
+      --muted: #607080;
+      --line: #d8e1ea;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #16855f;
+      --green-soft: #d8f3e7;
+      --amber: #b76b00;
+      --amber-soft: #fff0cf;
+      --red: #c2414b;
+      --red-soft: #ffe1e6;
+      --cyan: #047b8f;
+      --cyan-soft: #d7f5fb;
+      --shadow: 0 18px 45px rgba(23, 32, 42, 0.10);
+      --radius: 8px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      letter-spacing: 0;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px clamp(16px, 3vw, 34px);
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+    }
+
+    .title-block {
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.15rem, 2vw, 1.8rem);
+      line-height: 1.15;
+      font-weight: 780;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .control-button,
+    .stage-button,
+    .mode-button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      min-height: 38px;
+      border-radius: var(--radius);
+      padding: 8px 11px;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(23, 32, 42, 0.04);
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .control-button:hover,
+    .stage-button:hover,
+    .mode-button:hover {
+      transform: translateY(-1px);
+      border-color: #b6c6d8;
+    }
+
+    .control-button:focus-visible,
+    .stage-button:focus-visible,
+    .mode-button:focus-visible,
+    .speed input:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.28);
+      outline-offset: 2px;
+    }
+
+    .control-button.primary {
+      color: #ffffff;
+      background: var(--blue);
+      border-color: var(--blue);
+      min-width: 112px;
+    }
+
+    .speed {
+      display: grid;
+      grid-template-columns: auto 92px;
+      align-items: center;
+      gap: 8px;
+      margin-left: 4px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .speed input {
+      width: 92px;
+      accent-color: var(--blue);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(168px, 210px) minmax(0, 1fr) minmax(270px, 330px);
+      gap: 16px;
+      padding: 16px clamp(16px, 3vw, 34px) 20px;
+      min-height: 0;
+    }
+
+    .left-rail,
+    .details {
+      min-width: 0;
+    }
+
+    .left-rail {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mode-group,
+    .stage-list,
+    .details-panel,
+    .lesson-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .mode-group {
+      padding: 8px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .mode-button {
+      min-height: 36px;
+      text-align: left;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .mode-button.active {
+      background: var(--blue-soft);
+      border-color: rgba(37, 99, 235, 0.35);
+      color: #1747ad;
+      font-weight: 720;
+    }
+
+    .stage-list {
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+      overflow: auto;
+      max-height: calc(100vh - 190px);
+    }
+
+    .stage-button {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 8px;
+      text-align: left;
+      box-shadow: none;
+    }
+
+    .stage-button .num {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+    }
+
+    .stage-button .label {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }
+
+    .stage-button.active {
+      background: #ecfdf7;
+      border-color: rgba(22, 133, 95, 0.38);
+      color: #0d674a;
+      font-weight: 720;
+    }
+
+    .stage-button.active .num {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .main-stage {
+      display: grid;
+      grid-template-rows: auto minmax(470px, 1fr);
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .lesson-panel {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 270px);
+      align-items: start;
+      gap: 16px;
+    }
+
+    .hero-stack {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+    }
+
+    .step-kicker {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 720;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .step-title {
+      margin: 0;
+      font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+      line-height: 1.2;
+    }
+
+    .step-copy {
+      margin: 7px 0 0;
+      color: #344554;
+      line-height: 1.45;
+      max-width: 82ch;
+    }
+
+    .shape-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #101828;
+      color: #ffffff;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .reveal-card {
+      width: 100%;
+      border: 1px solid rgba(22, 133, 95, 0.24);
+      border-left: 4px solid var(--green);
+      border-radius: var(--radius);
+      background: #f0fbf6;
+      padding: 9px 10px;
+      color: #134e3a;
+    }
+
+    .reveal-label,
+    .prompt-label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.72rem;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .reveal-text,
+    .prompt-text {
+      margin: 0;
+      line-height: 1.35;
+      font-size: 0.88rem;
+    }
+
+    .reveal-text code,
+    .prompt-text code {
+      font-family: var(--mono);
+      font-size: 0.86em;
+      color: inherit;
+    }
+
+    .lesson-notes {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .lesson-note {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #f8fbfd;
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+
+    .note-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .note-text {
+      margin: 0;
+      color: #263545;
+      font-size: 0.9rem;
+      line-height: 1.38;
+    }
+
+    .shape-change {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .shape-box {
+      min-width: 0;
+      padding: 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .shape-box-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .shape-box-value {
+      font-family: var(--mono);
+      color: #0d3f72;
+      overflow-wrap: anywhere;
+      font-weight: 760;
+    }
+
+    .shape-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      font-weight: 900;
+      font-size: 1.1rem;
+      padding: 0 2px;
+      text-align: center;
+      gap: 3px;
+    }
+
+    .shape-arrow small {
+      display: block;
+      max-width: 86px;
+      color: var(--muted);
+      font-size: 0.66rem;
+      line-height: 1.15;
+      font-weight: 760;
+      overflow-wrap: anywhere;
+    }
+
+    .prediction-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 10px;
+    }
+
+    .prompt-card {
+      min-width: 0;
+      border: 1px solid rgba(37, 99, 235, 0.22);
+      border-left: 4px solid var(--blue);
+      background: #f3f7ff;
+      border-radius: var(--radius);
+      padding: 10px;
+      color: #183b78;
+    }
+
+    .prompt-card.answer {
+      border-color: rgba(183, 107, 0, 0.24);
+      border-left-color: var(--amber);
+      background: #fff8e6;
+      color: #4c3505;
+    }
+
+    .flow-board {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(23, 32, 42, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 42, 0.045) 1px, transparent 1px),
+        #ffffff;
+      background-size: 34px 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 720px;
+    }
+
+    .flow-inner {
+      position: relative;
+      min-height: 100%;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto minmax(250px, 1fr) auto auto auto;
+      gap: 13px;
+    }
+
+    .lane {
+      display: grid;
+      grid-template-columns: 105px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      position: relative;
+      z-index: 4;
+    }
+
+    .lane-title {
+      font-weight: 780;
+      color: #253342;
+      font-size: 0.92rem;
+    }
+
+    .token-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .token {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: #263545;
+      font-size: 0.84rem;
+      line-height: 1;
+      transition: transform 220ms ease, background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+    }
+
+    .source-hot .source-token,
+    .target-hot .target-token,
+    .cross-hot .source-token,
+    .cross-hot .target-token {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(23, 32, 42, 0.10);
+    }
+
+    .source-hot .source-token {
+      background: var(--cyan-soft);
+      border-color: rgba(4, 123, 143, 0.36);
+    }
+
+    .target-hot .target-token {
+      background: var(--amber-soft);
+      border-color: rgba(183, 107, 0, 0.34);
+    }
+
+    .cross-hot .source-token {
+      background: var(--green-soft);
+      border-color: rgba(22, 133, 95, 0.35);
+    }
+
+    .cross-hot .target-token {
+      background: var(--red-soft);
+      border-color: rgba(194, 65, 75, 0.32);
+    }
+
+    .processor-grid {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(135px, 1fr));
+      gap: 12px;
+      align-content: center;
+      min-height: 260px;
+    }
+
+    .process-card {
+      position: relative;
+      min-height: 118px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 7px;
+      overflow: hidden;
+      transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease, background 240ms ease;
+    }
+
+    .process-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: var(--card-color, var(--blue));
+      opacity: 0.72;
+    }
+
+    .process-card.active {
+      transform: translateY(-6px);
+      border-color: var(--card-color, var(--blue));
+      box-shadow: 0 18px 34px rgba(23, 32, 42, 0.16);
+      background: var(--card-soft, #ffffff);
+    }
+
+    .process-card.dimmed {
+      opacity: 0.48;
+    }
+
+    .process-card.memory-anchor:not(.active) {
+      border-color: rgba(22, 133, 95, 0.42);
+      box-shadow: 0 12px 24px rgba(22, 133, 95, 0.12);
+    }
+
+    .process-card.cross-anchor:not(.active) {
+      border-color: rgba(22, 133, 95, 0.34);
+      box-shadow: 0 10px 20px rgba(22, 133, 95, 0.10);
+    }
+
+    .process-card.cross-memory:not(.active) {
+      border-color: rgba(15, 118, 110, 0.34);
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.12);
+    }
+
+    .process-card.cross-decoder:not(.active) {
+      border-color: rgba(194, 65, 75, 0.28);
+      box-shadow: 0 12px 24px rgba(194, 65, 75, 0.11);
+    }
+
+    .process-card.cross-join:not(.active) {
+      border-color: rgba(4, 123, 143, 0.30);
+      box-shadow: 0 12px 24px rgba(4, 123, 143, 0.11);
+    }
+
+    .card-type {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .card-name {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.2;
+      font-weight: 780;
+    }
+
+    .card-role {
+      display: none;
+      align-items: center;
+      justify-self: start;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      font-size: 0.68rem;
+      font-weight: 780;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 220ms ease, transform 220ms ease, background 220ms ease, border-color 220ms ease, color 220ms ease;
+      overflow-wrap: anywhere;
+    }
+
+    .process-card.cross-memory .card-role,
+    .process-card.cross-decoder .card-role,
+    .process-card.cross-join .card-role {
+      display: inline-flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .process-card.cross-memory .card-role {
+      color: #0f766e;
+      background: rgba(15, 118, 110, 0.10);
+      border-color: rgba(15, 118, 110, 0.22);
+    }
+
+    .process-card.cross-decoder .card-role {
+      color: #9f1239;
+      background: rgba(194, 65, 75, 0.10);
+      border-color: rgba(194, 65, 75, 0.20);
+    }
+
+    .process-card.cross-join .card-role {
+      color: #0c4a6e;
+      background: rgba(4, 123, 143, 0.10);
+      border-color: rgba(4, 123, 143, 0.22);
+    }
+
+    .card-shape {
+      align-self: end;
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(23, 32, 42, 0.10);
+      border-radius: 6px;
+      padding: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .runner {
+      position: absolute;
+      z-index: 8;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      background: var(--red);
+      box-shadow: 0 0 0 8px rgba(194, 65, 75, 0.16), 0 12px 22px rgba(194, 65, 75, 0.28);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 520ms cubic-bezier(.2,.8,.2,1), top 520ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .runner::after {
+      content: "flow";
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 7px);
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      font-weight: 780;
+      color: var(--red);
+      background: #ffffff;
+      border: 1px solid rgba(194, 65, 75, 0.25);
+      border-radius: 999px;
+      padding: 3px 7px;
+      white-space: nowrap;
+    }
+
+    .connector-svg {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .connector-line {
+      fill: none;
+      stroke: rgba(37, 99, 235, 0.28);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 8 10;
+      animation: dash 1.8s linear infinite;
+    }
+
+    .connector-line.cross {
+      stroke-width: 4;
+    }
+
+    .connector-line.cross.memory {
+      stroke: rgba(22, 133, 95, 0.40);
+    }
+
+    .connector-line.cross.decoder {
+      stroke: rgba(194, 65, 75, 0.34);
+    }
+
+    .connector-line.cross.output {
+      stroke: rgba(4, 123, 143, 0.32);
+      stroke-dasharray: 6 9;
+    }
+
+    .connector-line.bridge {
+      stroke: rgba(15, 118, 110, 0.30);
+      stroke-width: 4;
+    }
+
+    .connector-line.muted {
+      stroke: rgba(96, 112, 128, 0.18);
+      animation: none;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -36;
+      }
+    }
+
+    .handoff-strip {
+      position: relative;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .handoff-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px;
+      transition: transform 220ms ease, border-color 220ms ease, background 220ms ease, box-shadow 220ms ease;
+    }
+
+    .handoff-card.active {
+      transform: translateY(-3px);
+      border-color: rgba(22, 133, 95, 0.42);
+      background: var(--green-soft);
+      box-shadow: 0 12px 24px rgba(22, 133, 95, 0.14);
+    }
+
+    .handoff-card.waiting {
+      opacity: 0.58;
+    }
+
+    .handoff-title {
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .handoff-value {
+      margin-top: 5px;
+      font-family: var(--mono);
+      color: #0d3f72;
+      font-weight: 780;
+      overflow-wrap: anywhere;
+    }
+
+    .handoff-copy {
+      margin-top: 5px;
+      color: #2d3d4b;
+      font-size: 0.82rem;
+      line-height: 1.32;
+    }
+
+    .handoff-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      font-weight: 900;
+      padding: 0 2px;
+    }
+
+    .matrix-zone {
+      position: relative;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: minmax(185px, 240px) minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .matrix-box {
+      display: grid;
+      grid-template-columns: repeat(var(--cols, 7), 1fr);
+      grid-template-rows: repeat(var(--rows, 7), 1fr);
+      gap: 4px;
+      min-height: 112px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .matrix-cell {
+      min-width: 10px;
+      min-height: 10px;
+      border-radius: 4px;
+      background: var(--blue-soft);
+      border: 1px solid rgba(37, 99, 235, 0.20);
+      animation: cell-pop 700ms ease both;
+    }
+
+    .matrix-cell:nth-child(3n) {
+      background: var(--green-soft);
+      border-color: rgba(22, 133, 95, 0.22);
+    }
+
+    .matrix-cell:nth-child(4n) {
+      background: var(--amber-soft);
+      border-color: rgba(183, 107, 0, 0.22);
+    }
+
+    @keyframes cell-pop {
+      from {
+        transform: scale(0.82);
+        opacity: 0.45;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .matrix-note {
+      min-width: 0;
+    }
+
+    .matrix-note h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .matrix-note p {
+      margin: 0;
+      color: #3c4d5d;
+      line-height: 1.42;
+    }
+
+    .formula {
+      margin-top: 8px;
+      font-family: var(--mono);
+      color: #17202a;
+      background: #f3f7fb;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .calculation {
+      margin-top: 8px;
+      border-left: 4px solid var(--green);
+      background: var(--green-soft);
+      color: #134e3a;
+      border-radius: 6px;
+      padding: 8px;
+      line-height: 1.38;
+      font-size: 0.9rem;
+    }
+
+    .details {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .details-panel {
+      padding: 14px;
+    }
+
+    .details-panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+    }
+
+    .shape-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .shape-row {
+      display: grid;
+      grid-template-columns: minmax(92px, 1fr) minmax(96px, auto);
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+      background: #ffffff;
+    }
+
+    .shape-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 0.86rem;
+      color: #2d3d4b;
+      font-weight: 700;
+    }
+
+    .shape-value {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: #0d3f72;
+      background: var(--blue-soft);
+      padding: 5px 6px;
+      border-radius: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .teacher-prompt {
+      margin-top: 12px;
+      border-left: 4px solid var(--amber);
+      background: var(--amber-soft);
+      padding: 10px;
+      border-radius: 6px;
+      color: #4c3505;
+      line-height: 1.4;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legend-item {
+      display: grid;
+      grid-template-columns: 14px minmax(0, 1fr);
+      gap: 7px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      min-width: 0;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: var(--blue);
+    }
+
+    .swatch.source {
+      background: var(--cyan);
+    }
+
+    .swatch.target {
+      background: var(--amber);
+    }
+
+    .swatch.cross {
+      background: var(--green);
+    }
+
+    .swatch.mask {
+      background: var(--red);
+    }
+
+    .timeline {
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      padding: 12px clamp(16px, 3vw, 34px) 15px;
+    }
+
+    .timeline-track {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(42px, 1fr));
+      gap: 8px;
+    }
+
+    .timeline-step {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .timeline-step span {
+      display: block;
+      height: 8px;
+      border-radius: 999px;
+      background: #dbe3ec;
+      transition: background 220ms ease, transform 220ms ease;
+    }
+
+    .timeline-step strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.73rem;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-step.active span {
+      background: var(--green);
+      transform: scaleY(1.35);
+    }
+
+    .timeline-step.active strong {
+      color: #0d674a;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1120px) {
+      .workspace {
+        grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+      }
+
+      .details {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar,
+      .lesson-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stack {
+        justify-items: start;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .left-rail {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .stage-list {
+        max-height: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .processor-grid {
+        grid-template-columns: repeat(2, minmax(135px, 1fr));
+      }
+
+      .matrix-zone,
+      .details,
+      .lesson-notes,
+      .shape-change,
+      .prediction-row,
+      .handoff-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .shape-arrow,
+      .handoff-arrow {
+        transform: rotate(90deg);
+      }
+
+      .timeline-track {
+        grid-template-columns: repeat(4, minmax(42px, 1fr));
+      }
+
+      .flow-board {
+        min-height: 1040px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .stage-list,
+      .processor-grid,
+      .timeline-track {
+        grid-template-columns: 1fr;
+      }
+
+      .lane {
+        grid-template-columns: 1fr;
+      }
+
+      .shape-pill {
+        white-space: normal;
+      }
+
+      .flow-board {
+        min-height: 1240px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="title-block">
+        <h1>Transformer Encoder-Decoder Shape Flow</h1>
+        <div class="subtitle">Watch source tokens become encoder memory, then see the decoder use masked self-attention and cross-attention to predict target tokens.</div>
+      </div>
+      <div class="controls" aria-label="Animation controls">
+        <button class="control-button" id="restartBtn" type="button">Restart</button>
+        <button class="control-button" id="prevBtn" type="button">Step -</button>
+        <button class="control-button primary" id="nextBtn" type="button">Next Step</button>
+        <button class="control-button" id="playBtn" type="button" aria-pressed="false">Auto Play</button>
+        <label class="speed" for="speedRange">
+          <span>Auto speed</span>
+          <input id="speedRange" type="range" min="650" max="2300" step="100" value="1450">
+        </label>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="left-rail" aria-label="Animation navigation">
+        <div class="mode-group" aria-label="Focus mode">
+          <button class="mode-button active" type="button" data-mode="full">Full Flow</button>
+          <button class="mode-button" type="button" data-mode="encoder">Encoder Only</button>
+          <button class="mode-button" type="button" data-mode="decoder">Decoder Only</button>
+          <button class="mode-button" type="button" data-mode="cross">Cross Attention</button>
+        </div>
+        <div class="stage-list" id="stageList"></div>
+      </aside>
+
+      <section class="main-stage" aria-label="Animated transformer shape flow">
+        <section class="lesson-panel" aria-live="polite">
+          <div>
+            <p class="step-kicker" id="stepKicker">Step 1 of 8</p>
+            <h2 class="step-title" id="stepTitle">Source token IDs</h2>
+            <p class="step-copy" id="stepCopy"></p>
+          </div>
+          <div class="hero-stack">
+            <div class="shape-pill" id="heroShape">[B, S] = [2, 7]</div>
+            <div class="reveal-card">
+              <span class="reveal-label">Revealed</span>
+              <p class="reveal-text" id="revealText"></p>
+            </div>
+          </div>
+          <div class="lesson-notes">
+            <article class="lesson-note">
+              <span class="note-label">What Changes</span>
+              <p class="note-text" id="whatChanges"></p>
+            </article>
+            <article class="lesson-note">
+              <span class="note-label">Why It Happens</span>
+              <p class="note-text" id="whyHappens"></p>
+            </article>
+            <article class="lesson-note">
+              <span class="note-label">Example Calculation</span>
+              <p class="note-text" id="exampleCalculation"></p>
+            </article>
+          </div>
+          <div class="shape-change" id="shapeChange"></div>
+          <div class="prediction-row">
+            <article class="prompt-card">
+              <span class="prompt-label">Predict</span>
+              <p class="prompt-text" id="nextQuestion"></p>
+            </article>
+            <article class="prompt-card answer">
+              <span class="prompt-label">Shape Cue</span>
+              <p class="prompt-text" id="shapeCue"></p>
+            </article>
+          </div>
+        </section>
+
+        <section class="flow-board" id="flowBoard">
+          <svg class="connector-svg" id="connectorSvg" aria-hidden="true"></svg>
+          <div class="flow-inner" id="flowInner">
+            <div class="lane source-lane">
+              <div class="lane-title">Source</div>
+              <div class="token-row" id="sourceTokens"></div>
+            </div>
+
+            <div class="processor-grid" id="processorGrid"></div>
+
+            <div class="handoff-strip" id="memoryBridge" aria-label="Encoder memory to decoder handoff"></div>
+
+            <div class="lane target-lane">
+              <div class="lane-title">Target</div>
+              <div class="token-row" id="targetTokens"></div>
+            </div>
+
+            <div class="matrix-zone">
+              <div class="matrix-box" id="matrixBox" aria-label="Shape matrix preview"></div>
+              <div class="matrix-note">
+                <h3 id="matrixTitle">Shape preview</h3>
+                <p id="matrixCopy"></p>
+                <div class="formula" id="formulaText"></div>
+                <div class="calculation" id="calculationText"></div>
+              </div>
+            </div>
+          </div>
+          <div class="runner" id="runner" aria-hidden="true"></div>
+        </section>
+      </section>
+
+      <aside class="details" aria-label="Current tensor details">
+        <section class="details-panel">
+          <h2>Current Shapes</h2>
+          <div class="shape-list" id="shapeList"></div>
+          <div class="teacher-prompt" id="teacherPrompt"></div>
+        </section>
+        <section class="details-panel">
+          <h2>Legend</h2>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch source"></span><span>Source tokens</span></div>
+            <div class="legend-item"><span class="swatch target"></span><span>Target tokens</span></div>
+            <div class="legend-item"><span class="swatch cross"></span><span>Cross attention</span></div>
+            <div class="legend-item"><span class="swatch mask"></span><span>Masked future</span></div>
+          </div>
+          <div class="teacher-prompt">
+            <strong>Flow link:</strong> encoder memory keeps the source length S, while decoder states keep the target length T.
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <footer class="timeline">
+      <div class="timeline-track" id="timelineTrack"></div>
+    </footer>
+  </main>
+
+  <script>
+    const dims = {
+      B: 2,
+      S: 7,
+      T: 6,
+      D: 8,
+      H: 2,
+      dHead: 4,
+      dFf: 32,
+      vSrc: 5000,
+      vTgt: 6000
+    };
+
+    const sourceTokens = ["customer", "reports", "damaged", "laptop", "needs", "refund", "<pad>"];
+    const targetTokens = ["<bos>", "client", "signale", "ordinateur", "endommage", "<pad>"];
+
+    const cards = [
+      {
+        id: "src-ids",
+        type: "Input",
+        name: "Source IDs",
+        shape: "[B, S]",
+        color: "#047b8f",
+        soft: "#d7f5fb"
+      },
+      {
+        id: "src-embed",
+        type: "Embedding",
+        name: "Source Embedding",
+        shape: "[B, S, D]",
+        color: "#2563eb",
+        soft: "#dbeafe"
+      },
+      {
+        id: "enc-attn",
+        type: "Encoder",
+        name: "Self-Attention",
+        shape: "[B, H, S, S]",
+        color: "#16855f",
+        soft: "#d8f3e7"
+      },
+      {
+        id: "memory",
+        type: "Encoder",
+        name: "Memory",
+        shape: "[B, S, D]",
+        color: "#0f766e",
+        soft: "#d8f3e7"
+      },
+      {
+        id: "tgt-embed",
+        type: "Decoder",
+        name: "Target Embedding",
+        shape: "[B, T, D]",
+        color: "#b76b00",
+        soft: "#fff0cf"
+      },
+      {
+        id: "dec-self",
+        type: "Decoder",
+        name: "Masked Self-Attn",
+        shape: "[B, H, T, T]",
+        color: "#c2414b",
+        soft: "#ffe1e6"
+      },
+      {
+        id: "cross",
+        type: "Decoder",
+        name: "Cross-Attention",
+        shape: "[B, H, T, S]",
+        color: "#16855f",
+        soft: "#d8f3e7"
+      },
+      {
+        id: "logits",
+        type: "Output",
+        name: "Vocab Logits",
+        shape: "[B, T, V_tgt]",
+        color: "#2563eb",
+        soft: "#dbeafe"
+      }
+    ];
+
+    const steps = [
+      {
+        card: "src-ids",
+        short: "Token IDs",
+        title: "Source token IDs",
+        copy: "The English customer message becomes integer IDs. The encoder starts with shape [B, S], one token ID per source position.",
+        shape: "[B, S] = [2, 7]",
+        focus: "source",
+        before: "raw source text: 2 sentences",
+        after: "source_ids: [B, S] = [2, 7]",
+        what: "Text strings become token IDs. The actual words are replaced by integer lookup numbers.",
+        why: "Neural networks process numbers, not raw strings. Padding makes both examples the same length.",
+        calc: "B = 2 examples and S = 7 source tokens, so source_ids has shape [2, 7].",
+        matrix: { rows: 2, cols: 7, title: "Batch x source length", copy: "Two examples, each padded or trimmed to seven source tokens.", formula: "source_ids: [B, S]", calculation: "Concrete: 2 rows in the batch x 7 token positions = 14 source IDs." },
+        shapes: [
+          ["source_ids", "[2, 7]"],
+          ["src_pad_mask", "[2, 1, 1, 7]"]
+        ],
+        prompt: "Ask: why is a padding mask needed when one sentence has <pad>?",
+        answer: "source_ids [B, S] = [2, 7]",
+        question: "Each source ID becomes a vector. Which new axis appears beside B and S?",
+        cue: "Keep B=2 and S=7. Embedding lookup adds D=8.",
+        delta: "text -> IDs"
+      },
+      {
+        card: "src-embed",
+        short: "Embeddings",
+        title: "Token and position embeddings",
+        copy: "Each source token ID is looked up in an embedding table, then a position vector is added so order is available to attention.",
+        shape: "[B, S, D] = [2, 7, 8]",
+        focus: "source",
+        before: "source_ids: [2, 7]",
+        after: "encoder_input: [2, 7, 8]",
+        what: "Each token ID becomes a vector. Position vectors are added so the model knows token order.",
+        why: "Attention works on vectors. Without positions, the model cannot distinguish word order.",
+        calc: "Each of the 2 x 7 token IDs gets D = 8 numbers, so the result is [2, 7, 8].",
+        matrix: { rows: 7, cols: 8, title: "Source vectors", copy: "Every source token is now an 8-dimensional vector.", formula: "src_input = token_embedding + position_embedding", calculation: "Lookup: source_ids [2, 7] + embedding size D=8 -> source vectors [2, 7, 8]." },
+        shapes: [
+          ["src_embedding_table", "[5000, 8]"],
+          ["src_token_embeddings", "[2, 7, 8]"],
+          ["src_position_embeddings", "[1, 7, 8]"],
+          ["src_input", "[2, 7, 8]"]
+        ],
+        prompt: "Board line: token embedding says what, position embedding says where.",
+        answer: "encoder_input [B, S, D] = [2, 7, 8]",
+        question: "With H=2 heads and d_head=4, what shape appears when source queries compare with source keys?",
+        cue: "Source compares with source, so the last two axes are S by S.",
+        delta: "add D"
+      },
+      {
+        card: "enc-attn",
+        short: "Encoder Attn",
+        title: "Encoder self-attention",
+        copy: "Every source token compares with every source token. The score grid is S by S, then the weighted values collapse back to one vector per source token.",
+        shape: "[B, H, S, S] = [2, 2, 7, 7]",
+        focus: "source",
+        before: "encoder_input: [2, 7, 8]",
+        after: "encoder scores: [2, 2, 7, 7]",
+        what: "Source vectors become Q, K, V, split into heads, then every source token scores every source token.",
+        why: "Those scores decide which source values to mix, producing context vectors that still line up with the original source positions.",
+        calc: "D=8 split into H=2 heads gives d_head=4. Q [2,2,7,4] @ K^T [2,2,4,7] -> scores [2,2,7,7].",
+        matrix: { rows: 7, cols: 7, title: "Source-to-source attention", copy: "Rows are source queries. Columns are source keys.", formula: "scores = Q_src @ K_src^T / sqrt(d_head)", calculation: "Last two dims multiply: [7, 4] @ [4, 7] = [7, 7]. Keep B=2 and H=2 in front." },
+        shapes: [
+          ["Q, K, V", "[2, 7, 8]"],
+          ["Q_heads", "[2, 2, 7, 4]"],
+          ["scores", "[2, 2, 7, 7]"],
+          ["context", "[2, 7, 8]"]
+        ],
+        prompt: "Ask: why does the score shape end with [S, S]?",
+        answer: "encoder self scores [B, H, S, S] = [2, 2, 7, 7]",
+        question: "After scores mix source values, does the encoder keep S positions or create target positions?",
+        cue: "Attention scores are temporary. The context returns to D-sized vectors.",
+        delta: "S scores S"
+      },
+      {
+        card: "memory",
+        short: "Memory",
+        title: "Encoder memory",
+        copy: "The source self-attention context is normalized, passed through the feed-forward layer, and stored as encoder_memory. It is not a new branch; it is the source sequence after context mixing.",
+        shape: "[B, S, D] = [2, 7, 8]",
+        focus: "source",
+        before: "encoder attention context: [2, 7, 8]",
+        after: "encoder_memory: [2, 7, 8]",
+        what: "The score grid [B,H,S,S] has done its job. The encoder output is back to [B,S,D]: one updated vector for each source position.",
+        why: "The decoder will later reuse this tensor as source keys and values. That is the bridge from encoder reading to decoder writing.",
+        calc: "FFN expands [2,7,8] -> [2,7,32], then projects back [2,7,32] -> [2,7,8].",
+        matrix: { rows: 7, cols: 8, title: "Context-aware source memory", copy: "The length is still S. The values are richer because each token has seen the full source.", formula: "encoder_memory: [B, S, D]", calculation: "Source length does not change: S=7 in, S=7 out. Only vector values become context-aware." },
+        shapes: [
+          ["ffn_hidden", "[2, 7, 32]"],
+          ["ffn_output", "[2, 7, 8]"],
+          ["encoder_memory", "[2, 7, 8]"]
+        ],
+        prompt: "Important: encoder does not create target tokens. It creates memory.",
+        answer: "encoder_memory [B, S, D] = [2, 7, 8]",
+        question: "The decoder starts from shifted target IDs [B,T]. After lookup, which shape mirrors the source embedding but uses T?",
+        cue: "Switch from source length S=7 to target length T=6, while D stays 8.",
+        delta: "scores -> memory"
+      },
+      {
+        card: "tgt-embed",
+        short: "Target Input",
+        title: "Shifted decoder input",
+        copy: "During training the decoder receives the correct previous target tokens. The encoder memory is already ready; now the decoder builds target-side vectors that will query it later.",
+        shape: "[B, T, D] = [2, 6, 8]",
+        focus: "target",
+        before: "target_input_ids: [2, 6]",
+        after: "decoder_input: [2, 6, 8]",
+        what: "Shifted target IDs become target vectors. The decoder input starts with <bos> and previous correct tokens.",
+        why: "Teacher forcing lets the model learn all next-token predictions in parallel during training.",
+        calc: "B=2, T=6, D=8. Each target ID gets an 8-number vector, so decoder_input is [2,6,8].",
+        matrix: { rows: 6, cols: 8, title: "Target prefix vectors", copy: "The decoder starts from shifted target tokens such as <bos> client signale.", formula: "target_input_ids -> target_embeddings: [B, T, D]", calculation: "Decoder can see target_input_ids, but labels are shifted one step ahead as the answer." },
+        shapes: [
+          ["target_input_ids", "[2, 6]"],
+          ["target_labels", "[2, 6]"],
+          ["tgt_input", "[2, 6, 8]"]
+        ],
+        prompt: "Say clearly: decoder input is what it can see; labels are what it must predict.",
+        answer: "decoder_input [B, T, D] = [2, 6, 8]",
+        question: "Target positions now compare with earlier target positions. Which score grid uses T on both axes?",
+        cue: "This is target-with-target before the source memory is consulted.",
+        delta: "S -> T"
+      },
+      {
+        card: "dec-self",
+        short: "Masked Attn",
+        title: "Decoder masked self-attention",
+        copy: "Target positions attend only to earlier target positions. This creates a target-side state [B,T,D], which becomes the query side for encoder memory next.",
+        shape: "[B, H, T, T] = [2, 2, 6, 6]",
+        focus: "target",
+        before: "decoder_input: [2, 6, 8]",
+        after: "decoder self scores: [2, 2, 6, 6]",
+        what: "Target vectors become Q, K, V. Each target position scores target positions, but future positions are masked.",
+        why: "The decoder must learn to write left-to-right. This step organizes the partial target sentence before it looks back at the source.",
+        calc: "Q [2,2,6,4] @ K^T [2,2,4,6] -> [2,2,6,6]. The causal mask blocks cells above the diagonal.",
+        matrix: { rows: 6, cols: 6, title: "Target-to-target causal attention", copy: "The lower triangle is allowed. Future positions are masked.", formula: "decoder_self_scores: [B, H, T, T]", calculation: "T=6 target positions. Each target query compares with 6 target keys, so the score grid is 6 x 6." },
+        shapes: [
+          ["Q, K, V", "[2, 6, 8]"],
+          ["causal_mask", "[1, 1, 6, 6]"],
+          ["decoder_self_mask", "[2, 1, 6, 6]"],
+          ["self_scores", "[2, 2, 6, 6]"]
+        ],
+        prompt: "Ask: what would go wrong if the decoder could see future words?",
+        answer: "decoder self scores [B, H, T, T] = [2, 2, 6, 6]",
+        question: "Now target queries meet encoder memory keys. Should the final score grid be T by T or T by S?",
+        cue: "Rows come from target positions. Columns come from source memory positions.",
+        delta: "T scores T"
+      },
+      {
+        card: "cross",
+        short: "Cross Attn",
+        title: "Decoder cross-attention",
+        copy: "The decoder state becomes queries, while encoder_memory becomes keys and values. This is where the target-side T positions directly read the source-side S positions.",
+        shape: "[B, H, T, S] = [2, 2, 6, 7]",
+        focus: "cross",
+        before: "decoder state [2,6,8] + encoder memory [2,7,8]",
+        after: "cross scores: [2, 2, 6, 7]",
+        what: "Target queries compare against source-memory keys. The decoder decides which source positions matter for each target position.",
+        why: "Masked self-attention prepared the target query. Encoder memory supplies the source facts. Cross-attention joins them in a T by S grid.",
+        calc: "Q from target [2,2,6,4] @ K^T from source [2,2,4,7] -> cross_scores [2,2,6,7].",
+        matrix: { rows: 6, cols: 7, title: "Target-to-source attention", copy: "Rows are target queries. Columns are source memory positions.", formula: "cross_scores = Q_tgt @ K_src^T", calculation: "Last two dims: [T, d_head] @ [d_head, S] = [T, S] = [6, 7]." },
+        shapes: [
+          ["Q_cross", "[2, 6, 8]"],
+          ["K_cross", "[2, 7, 8]"],
+          ["V_cross", "[2, 7, 8]"],
+          ["cross_scores", "[2, 2, 6, 7]"]
+        ],
+        prompt: "This is the heart of encoder-decoder: T by S, target looking at source.",
+        answer: "cross_scores [B, H, T, S] = [2, 2, 6, 7]",
+        question: "After cross-attention returns decoder vectors [B,T,D], what dimension replaces D at the vocabulary layer?",
+        cue: "Every target position now needs scores over the target vocabulary.",
+        delta: "T reads S"
+      },
+      {
+        card: "logits",
+        short: "Logits",
+        title: "Vocabulary logits and loss",
+        copy: "The decoder output is projected to the target vocabulary. Every target position gets one score for every possible next token.",
+        shape: "[B, T, V_tgt] = [2, 6, 6000]",
+        focus: "target",
+        before: "decoder_output: [2, 6, 8]",
+        after: "logits: [2, 6, 6000]",
+        what: "Each decoder vector is converted into vocabulary scores. The highest-scoring token is the model's next-token choice.",
+        why: "The model must choose from the target vocabulary at every target position.",
+        calc: "decoder_output [2,6,8] @ W_vocab [8,6000] -> logits [2,6,6000]. For loss: [2*6,6000] vs [2*6].",
+        matrix: { rows: 6, cols: 8, title: "From decoder vectors to vocabulary scores", copy: "The real last dimension is 6000 here; this preview compresses it for display.", formula: "logits = decoder_output @ W_vocab", calculation: "D=8 is replaced by V_tgt=6000 because each position now scores every target vocabulary token." },
+        shapes: [
+          ["decoder_output", "[2, 6, 8]"],
+          ["W_vocab", "[8, 6000]"],
+          ["logits", "[2, 6, 6000]"],
+          ["loss input", "[12, 6000] vs [12]"]
+        ],
+        prompt: "Final check: what does the vocabulary dimension represent?",
+        answer: "logits [B, T, V_tgt] = [2, 6, 6000]",
+        question: "End check: for loss, which two axes flatten together before cross entropy?",
+        cue: "Batch positions and target positions become training rows.",
+        delta: "D -> V_tgt"
+      }
+    ];
+
+    const memoryStepIndex = steps.findIndex((step) => step.card === "memory");
+    const targetStepIndex = steps.findIndex((step) => step.card === "tgt-embed");
+    const crossStepIndex = steps.findIndex((step) => step.card === "cross");
+
+    let currentStep = 0;
+    let isPlaying = false;
+    let timerId = null;
+    let mode = "full";
+
+    const stepKicker = document.getElementById("stepKicker");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepCopy = document.getElementById("stepCopy");
+    const heroShape = document.getElementById("heroShape");
+    const revealText = document.getElementById("revealText");
+    const nextQuestion = document.getElementById("nextQuestion");
+    const shapeCue = document.getElementById("shapeCue");
+    const processorGrid = document.getElementById("processorGrid");
+    const sourceTokenEl = document.getElementById("sourceTokens");
+    const targetTokenEl = document.getElementById("targetTokens");
+    const flowBoard = document.getElementById("flowBoard");
+    const flowInner = document.getElementById("flowInner");
+    const memoryBridge = document.getElementById("memoryBridge");
+    const runner = document.getElementById("runner");
+    const matrixBox = document.getElementById("matrixBox");
+    const matrixTitle = document.getElementById("matrixTitle");
+    const matrixCopy = document.getElementById("matrixCopy");
+    const formulaText = document.getElementById("formulaText");
+    const calculationText = document.getElementById("calculationText");
+    const shapeList = document.getElementById("shapeList");
+    const teacherPrompt = document.getElementById("teacherPrompt");
+    const whatChanges = document.getElementById("whatChanges");
+    const whyHappens = document.getElementById("whyHappens");
+    const exampleCalculation = document.getElementById("exampleCalculation");
+    const shapeChange = document.getElementById("shapeChange");
+    const stageList = document.getElementById("stageList");
+    const timelineTrack = document.getElementById("timelineTrack");
+    const connectorSvg = document.getElementById("connectorSvg");
+    const speedRange = document.getElementById("speedRange");
+    const playBtn = document.getElementById("playBtn");
+
+    function cardForStep(step) {
+      return cards.find((card) => card.id === step.card);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function visibleCardIds() {
+      if (mode === "encoder") {
+        return new Set(["src-ids", "src-embed", "enc-attn", "memory"]);
+      }
+      if (mode === "decoder") {
+        return new Set(["tgt-embed", "dec-self", "logits"]);
+      }
+      if (mode === "cross") {
+        return new Set(["memory", "tgt-embed", "dec-self", "cross"]);
+      }
+      return new Set(cards.map((card) => card.id));
+    }
+
+    function allowedStepsForMode() {
+      const ids = visibleCardIds();
+      return steps
+        .map((step, index) => ({ step, index }))
+        .filter((entry) => ids.has(entry.step.card));
+    }
+
+    function renderTokens() {
+      sourceTokenEl.innerHTML = sourceTokens
+        .map((token) => `<span class="token source-token">${escapeHtml(token)}</span>`)
+        .join("");
+      targetTokenEl.innerHTML = targetTokens
+        .map((token) => `<span class="token target-token">${escapeHtml(token)}</span>`)
+        .join("");
+    }
+
+    function renderCards() {
+      const ids = visibleCardIds();
+      processorGrid.innerHTML = cards
+        .map((card) => {
+          const hidden = ids.has(card.id) ? "" : " dimmed";
+          return `
+            <article class="process-card${hidden}" id="card-${card.id}" style="--card-color:${card.color}; --card-soft:${card.soft}">
+              <div class="card-type">${card.type}</div>
+              <h3 class="card-name">${card.name}</h3>
+              <div class="card-role" aria-hidden="true"></div>
+              <div class="card-shape">${card.shape}</div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function renderNavigation() {
+      stageList.innerHTML = steps
+        .map((step, index) => `
+          <button class="stage-button" type="button" data-step="${index}">
+            <span class="num">${index + 1}</span>
+            <span class="label">${step.short}</span>
+          </button>
+        `)
+        .join("");
+
+      timelineTrack.innerHTML = steps
+        .map((step, index) => `
+          <button class="timeline-step" type="button" data-step="${index}" aria-label="Go to ${step.short}">
+            <span></span>
+            <strong>${step.short}</strong>
+          </button>
+        `)
+        .join("");
+
+      stageList.querySelectorAll("[data-step]").forEach((button) => {
+        button.addEventListener("click", () => goToStep(Number(button.dataset.step)));
+      });
+      timelineTrack.querySelectorAll("[data-step]").forEach((button) => {
+        button.addEventListener("click", () => goToStep(Number(button.dataset.step)));
+      });
+    }
+
+    function renderMatrix(matrix) {
+      matrixBox.style.setProperty("--rows", matrix.rows);
+      matrixBox.style.setProperty("--cols", matrix.cols);
+      const cells = matrix.rows * matrix.cols;
+      matrixBox.innerHTML = Array.from({ length: cells }, (_, i) => {
+        const delay = Math.min(i * 14, 360);
+        return `<span class="matrix-cell" style="animation-delay:${delay}ms"></span>`;
+      }).join("");
+      matrixTitle.textContent = matrix.title;
+      matrixCopy.textContent = matrix.copy;
+      formulaText.textContent = matrix.formula;
+      calculationText.textContent = matrix.calculation;
+    }
+
+    function renderShapes(step) {
+      shapeList.innerHTML = step.shapes
+        .map(([name, shape]) => `
+          <div class="shape-row">
+            <div class="shape-name">${name}</div>
+            <div class="shape-value">${shape}</div>
+          </div>
+        `)
+        .join("");
+      teacherPrompt.textContent = step.prompt;
+    }
+
+    function renderPrediction(step) {
+      const previous = currentStep > 0 ? steps[currentStep - 1] : null;
+      revealText.textContent = previous ? `Previous answer: ${previous.answer}` : `Starting shape: ${step.answer}`;
+      nextQuestion.textContent = step.question;
+      shapeCue.textContent = step.cue;
+    }
+
+    function renderHandoff() {
+      const activeKey = currentStep >= crossStepIndex
+        ? "cross"
+        : currentStep >= targetStepIndex
+          ? "decoder"
+          : "memory";
+      const memoryReady = currentStep >= memoryStepIndex;
+      const decoderReady = currentStep >= targetStepIndex;
+      const crossReady = currentStep >= crossStepIndex;
+      const items = [
+        {
+          key: "memory",
+          title: "Encoder memory",
+          value: "[B, S, D] = [2, 7, 8]",
+          copy: memoryReady ? "Ready source facts: decoder cross-attention will reuse this as K and V over source positions." : "Forming from source self-attention.",
+          ready: memoryReady
+        },
+        {
+          key: "decoder",
+          title: "Decoder state",
+          value: "[B, T, D] = [2, 6, 8]",
+          copy: decoderReady ? "Target prefix vectors are ready to become Q and ask source-side questions." : "Waiting for shifted target tokens.",
+          ready: decoderReady
+        },
+        {
+          key: "cross",
+          title: "Cross scores",
+          value: "[B, H, T, S] = [2, 2, 6, 7]",
+          copy: crossReady ? "Q comes from decoder state while K and V come from encoder memory, so each target row reads across source columns." : "Combines decoder Q with encoder K and V.",
+          ready: crossReady
+        }
+      ];
+
+      memoryBridge.innerHTML = items
+        .map((item, index) => {
+          const stateClass = `${item.key === activeKey ? " active" : ""}${item.ready ? "" : " waiting"}`;
+          const arrow = index < items.length - 1 ? `<div class="handoff-arrow">-></div>` : "";
+          return `
+            <article class="handoff-card${stateClass}" data-bridge="${item.key}">
+              <div class="handoff-title">${item.title}</div>
+              <div class="handoff-value">${item.value}</div>
+              <div class="handoff-copy">${item.copy}</div>
+            </article>
+            ${arrow}
+          `;
+        })
+        .join("");
+    }
+
+    function renderLessonDetails(step) {
+      whatChanges.textContent = step.what;
+      whyHappens.textContent = step.why;
+      exampleCalculation.textContent = step.calc;
+      shapeChange.innerHTML = `
+        <div class="shape-box">
+          <div class="shape-box-label">Before This Step</div>
+          <div class="shape-box-value">${escapeHtml(step.before)}</div>
+        </div>
+        <div class="shape-arrow"><span>-></span><small>${escapeHtml(step.delta)}</small></div>
+        <div class="shape-box">
+          <div class="shape-box-label">After This Step</div>
+          <div class="shape-box-value">${escapeHtml(step.after)}</div>
+        </div>
+      `;
+    }
+
+    function renderConnectors() {
+      const boardRect = flowBoard.getBoundingClientRect();
+      const svgWidth = Math.max(1, Math.round(boardRect.width));
+      const svgHeight = Math.max(1, Math.round(boardRect.height));
+      connectorSvg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+      connectorSvg.setAttribute("width", svgWidth);
+      connectorSvg.setAttribute("height", svgHeight);
+
+      const active = steps[currentStep];
+      const activeCard = document.getElementById(`card-${active.card}`);
+      const sourceLane = document.querySelector(".source-lane");
+      const targetLane = document.querySelector(".target-lane");
+      if (!activeCard || !sourceLane || !targetLane) {
+        return;
+      }
+
+      function point(el, side = "center") {
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left - boardRect.left + rect.width / 2;
+        const centerY = rect.top - boardRect.top + rect.height / 2;
+        return {
+          x: side === "left"
+            ? rect.left - boardRect.left
+            : side === "right"
+              ? rect.right - boardRect.left
+              : centerX,
+          y: side === "top"
+            ? rect.top - boardRect.top
+            : side === "bottom"
+              ? rect.bottom - boardRect.top
+              : centerY
+        };
+      }
+
+      function connectorPath(fromEl, toEl) {
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+        const fromCenterX = fromRect.left + fromRect.width / 2;
+        const fromCenterY = fromRect.top + fromRect.height / 2;
+        const toCenterX = toRect.left + toRect.width / 2;
+        const toCenterY = toRect.top + toRect.height / 2;
+        const dx = toCenterX - fromCenterX;
+        const dy = toCenterY - fromCenterY;
+        const horizontal = Math.abs(dx) > Math.abs(dy);
+        const xDir = Math.sign(dx) || 1;
+        const yDir = Math.sign(dy) || 1;
+        const from = horizontal
+          ? point(fromEl, xDir > 0 ? "right" : "left")
+          : point(fromEl, yDir > 0 ? "bottom" : "top");
+        const to = horizontal
+          ? point(toEl, xDir > 0 ? "left" : "right")
+          : point(toEl, yDir > 0 ? "top" : "bottom");
+
+        if (horizontal) {
+          const curve = Math.max(42, Math.abs(dx) * 0.45);
+          const sway = dy * 0.16;
+          return `M ${from.x} ${from.y} C ${from.x + xDir * curve} ${from.y + sway}, ${to.x - xDir * curve} ${to.y - sway}, ${to.x} ${to.y}`;
+        }
+
+        const curve = Math.max(42, Math.abs(dy) * 0.42);
+        const sway = dx * 0.18;
+        return `M ${from.x} ${from.y} C ${from.x + sway} ${from.y + yDir * curve}, ${to.x - sway} ${to.y - yDir * curve}, ${to.x} ${to.y}`;
+      }
+
+      const memoryCard = document.getElementById("card-memory");
+      const decoderCard = document.getElementById("card-dec-self");
+      const crossCard = document.getElementById("card-cross");
+      const bridgeMemory = memoryBridge.querySelector('[data-bridge="memory"]');
+      const bridgeCross = memoryBridge.querySelector('[data-bridge="cross"]');
+      const sourceEntry = active.focus === "cross" && memoryCard ? memoryCard : activeCard;
+      const targetEntry = active.focus === "cross" && decoderCard ? decoderCard : activeCard;
+      const lines = [];
+
+      function pushLine(extraClasses, fromEl, toEl, highlighted) {
+        if (!fromEl || !toEl) {
+          return;
+        }
+        const classes = ["connector-line"];
+        if (extraClasses) {
+          classes.push(...extraClasses.split(" "));
+        }
+        if (!highlighted) {
+          classes.push("muted");
+        }
+        lines.push(`<path class="${classes.join(" ")}" d="${connectorPath(fromEl, toEl)}"></path>`);
+      }
+
+      pushLine("", sourceLane, sourceEntry, active.focus === "source" || active.focus === "cross");
+      pushLine("", targetLane, targetEntry, active.focus === "target" || active.focus === "cross");
+      pushLine("bridge", memoryCard, bridgeMemory, currentStep >= memoryStepIndex);
+      pushLine("cross memory", memoryCard, crossCard, currentStep >= crossStepIndex);
+      pushLine("cross decoder", decoderCard, crossCard, currentStep >= crossStepIndex);
+      pushLine("cross output", crossCard, bridgeCross, currentStep >= crossStepIndex);
+
+      connectorSvg.innerHTML = lines.join("");
+    }
+
+    function positionRunner() {
+      const step = steps[currentStep];
+      const card = document.getElementById(`card-${step.card}`);
+      if (!card) {
+        return;
+      }
+      const boardRect = flowBoard.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      runner.style.left = `${cardRect.left - boardRect.left + cardRect.width / 2}px`;
+      runner.style.top = `${cardRect.top - boardRect.top + cardRect.height / 2}px`;
+    }
+
+    function renderStep() {
+      const step = steps[currentStep];
+      const activeCard = cardForStep(step);
+      const crossRoles = currentStep >= crossStepIndex
+        ? {
+            "card-memory": { badge: "K, V input", tone: "cross-memory" },
+            "card-dec-self": { badge: "Q input", tone: "cross-decoder" },
+            "card-cross": { badge: "T x S join", tone: "cross-join" }
+          }
+        : {};
+      stepKicker.textContent = `Step ${currentStep + 1} of ${steps.length}`;
+      stepTitle.textContent = step.title;
+      stepCopy.textContent = step.copy;
+      heroShape.textContent = step.shape;
+
+      flowInner.classList.remove("source-hot", "target-hot", "cross-hot");
+      flowInner.classList.add(`${step.focus}-hot`);
+
+      document.querySelectorAll(".process-card").forEach((card) => {
+        const role = crossRoles[card.id];
+        const roleEl = card.querySelector(".card-role");
+        card.classList.toggle("active", card.id === `card-${step.card}`);
+        card.classList.toggle("memory-anchor", card.id === "card-memory" && currentStep >= memoryStepIndex);
+        card.classList.toggle("cross-anchor", card.id === "card-cross" && currentStep >= targetStepIndex);
+        card.classList.toggle("cross-memory", role?.tone === "cross-memory");
+        card.classList.toggle("cross-decoder", role?.tone === "cross-decoder");
+        card.classList.toggle("cross-join", role?.tone === "cross-join");
+        if (roleEl) {
+          roleEl.textContent = role ? role.badge : "";
+        }
+      });
+      document.querySelectorAll("[data-step]").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.step) === currentStep);
+      });
+
+      heroShape.style.background = activeCard ? activeCard.color : "#101828";
+      renderMatrix(step.matrix);
+      renderShapes(step);
+      renderLessonDetails(step);
+      renderPrediction(step);
+      renderHandoff();
+      window.requestAnimationFrame(() => {
+        positionRunner();
+        renderConnectors();
+      });
+    }
+
+    function goToStep(index) {
+      currentStep = (index + steps.length) % steps.length;
+      renderStep();
+    }
+
+    function nextAllowed(direction) {
+      if (mode === "full") {
+        return (currentStep + direction + steps.length) % steps.length;
+      }
+      const allowed = allowedStepsForMode().map((entry) => entry.index);
+      const position = allowed.indexOf(currentStep);
+      if (position === -1) {
+        return allowed[0] ?? 0;
+      }
+      return allowed[(position + direction + allowed.length) % allowed.length];
+    }
+
+    function nextStep() {
+      goToStep(nextAllowed(1));
+    }
+
+    function prevStep() {
+      goToStep(nextAllowed(-1));
+    }
+
+    function play() {
+      if (isPlaying) {
+        return;
+      }
+      isPlaying = true;
+      playBtn.textContent = "Stop Auto";
+      playBtn.setAttribute("aria-pressed", "true");
+      timerId = window.setInterval(nextStep, Number(speedRange.value));
+    }
+
+    function pause() {
+      isPlaying = false;
+      playBtn.textContent = "Auto Play";
+      playBtn.setAttribute("aria-pressed", "false");
+      if (timerId) {
+        window.clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+      renderCards();
+      const visible = visibleCardIds();
+      if (!visible.has(steps[currentStep].card)) {
+        currentStep = allowedStepsForMode()[0]?.index ?? 0;
+      }
+      renderStep();
+    }
+
+    document.getElementById("restartBtn").addEventListener("click", () => goToStep(0));
+    document.getElementById("prevBtn").addEventListener("click", prevStep);
+    document.getElementById("nextBtn").addEventListener("click", nextStep);
+    playBtn.addEventListener("click", () => {
+      if (isPlaying) {
+        pause();
+      } else {
+        play();
+      }
+    });
+    speedRange.addEventListener("input", () => {
+      if (isPlaying) {
+        pause();
+        play();
+      }
+    });
+    document.querySelectorAll(".mode-button").forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    window.addEventListener("resize", () => {
+      positionRunner();
+      renderConnectors();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.target && ["INPUT", "BUTTON"].includes(event.target.tagName)) {
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        nextStep();
+      }
+      if (event.key === "ArrowLeft") {
+        prevStep();
+      }
+      if (event.key === " ") {
+        event.preventDefault();
+        isPlaying ? pause() : play();
+      }
+    });
+
+    renderTokens();
+    renderCards();
+    renderNavigation();
+    renderStep();
+  </script>
+</body>
+</html>
