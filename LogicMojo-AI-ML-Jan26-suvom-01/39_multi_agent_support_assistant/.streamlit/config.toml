@@ -1,0 +1,14 @@
+# Disable Streamlit's source-file watcher.
+#
+# Why: the watcher inspects the __path__ of every imported module to hot-reload
+# on change. In a heavy env (transformers, etc.) some modules lazily import
+# optional deps like torchvision and raise noisy tracebacks during that scan.
+# We don't need hot-reload for this app — just stop and re-run `streamlit run
+# app.py` after editing code. This makes startup clean and fast.
+[server]
+fileWatcherType = "none"
+
+[runner]
+# Re-run the script top-to-bottom on each widget interaction (default behaviour,
+# made explicit). Our app stores conversation state in st.session_state.
+fastReruns = true

@@ -1,0 +1,47 @@
+{
+  "CUST-1001": {
+    "id": "CUST-1001",
+    "name": "Priya Sharma",
+    "email": "priya@designhub.io",
+    "since": "2023-04-12",
+    "plan": "Pro",
+    "seats": 5,
+    "mrr": 75,
+    "two_factor": false,
+    "payment_method": "Visa •••• 4242",
+    "invoices": [
+      {"id": "INV-2207", "date": "2026-06-01", "amount": 75, "status": "paid"},
+      {"id": "INV-2150", "date": "2026-05-01", "amount": 75, "status": "paid"}
+    ],
+    "open_tickets": 0
+  },
+  "CUST-1002": {
+    "id": "CUST-1002",
+    "name": "Marcus Lee",
+    "email": "marcus@brightlabs.dev",
+    "since": "2024-11-20",
+    "plan": "Business",
+    "seats": 25,
+    "mrr": 400,
+    "two_factor": true,
+    "payment_method": "Mastercard •••• 8810",
+    "invoices": [
+      {"id": "INV-2299", "date": "2026-06-01", "amount": 400, "status": "failed"},
+      {"id": "INV-2233", "date": "2026-05-01", "amount": 400, "status": "paid"}
+    ],
+    "open_tickets": 1
+  },
+  "CUST-1003": {
+    "id": "CUST-1003",
+    "name": "Aisha Khan",
+    "email": "aisha@studiokind.co",
+    "since": "2026-02-08",
+    "plan": "Free",
+    "seats": 1,
+    "mrr": 0,
+    "two_factor": false,
+    "payment_method": "none",
+    "invoices": [],
+    "open_tickets": 0
+  }
+}
